@@ -77,6 +77,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
+            white-space: nowrap;
         }
         button:hover { background: #1d4ed8; }
         button.danger { background: #ef4444; }
@@ -240,8 +241,11 @@
         <button onclick="createCompetition()" style="margin-top: 10px;">Create Competition</button>
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
-        <label>Existing Competitions <div class="help-btn" onclick="showHelp('Existing Competitions', 'Select a previously created competition to load it into the Data Entry and Results tabs.')">i</div></label>
-        <select id="comp-selector" onchange="loadActiveCompetition()"></select>
+        <label>Existing Competitions <div class="help-btn" onclick="showHelp('Existing Competitions', 'Select a previously created competition to load it into the Data Entry and Results tabs.\n\nYou can also permanently delete a competition using the delete button.')">i</div></label>
+        <div style="display: flex; gap: 10px; max-width: 600px;">
+            <select id="comp-selector" onchange="loadActiveCompetition()" style="flex: 1;"></select>
+            <button class="danger" id="delete-comp-btn" style="display: none;" onclick="deleteCompetition()">🗑️ Delete</button>
+        </div>
     </div>
 
     <div id="entry" class="tab-content card no-print">
@@ -421,6 +425,26 @@
         });
     }
 
+    function deleteCompetition() {
+        const sel = document.getElementById('comp-selector');
+        const idToDelete = sel.value;
+        
+        if (!idToDelete) return;
+        
+        const comp = appData.competitions.find(c => c.id === idToDelete);
+        
+        if (!confirm(`Are you sure you want to permanently delete the competition "${comp.name}"?\n\nThis action will erase all student records associated with it and cannot be undone.`)) {
+            return;
+        }
+        
+        appData.competitions = appData.competitions.filter(c => c.id !== idToDelete);
+        saveData();
+        
+        activeCompId = null;
+        updateCompSelector();
+        loadActiveCompetition(); 
+    }
+
     // --- Data Entry Grid ---
     function loadActiveCompetition() {
         const sel = document.getElementById('comp-selector');
@@ -429,6 +453,7 @@
         const table = document.getElementById('entry-table');
         const btnAdd = document.getElementById('btn-add-student');
         const helpAdd = document.getElementById('help-add-student');
+        const deleteCompBtn = document.getElementById('delete-comp-btn');
 
         const comp = appData.competitions.find(c => c.id === activeCompId);
         if (!comp) {
@@ -436,12 +461,14 @@
             table.style.display = 'none';
             btnAdd.style.display = 'none';
             helpAdd.style.display = 'none';
+            deleteCompBtn.style.display = 'none';
             return;
         }
         
         table.style.display = 'table';
         btnAdd.style.display = 'inline-block';
         helpAdd.style.display = 'inline-flex';
+        deleteCompBtn.style.display = 'block';
         
         let dateStr = comp.date ? ` (${new Date(comp.date).toLocaleDateString()})` : '';
         document.getElementById('active-comp-title').innerText = comp.name + dateStr;
@@ -477,7 +504,7 @@
             });
             
             let tdTotal = `<td class="total-cell" id="total-${rec.id}">${rec.total || 0}</td>`;
-            let tdAction = `<td class="no-print"><button class="danger" onclick="deleteRecord('${rec.id}')">X</button></td>`;
+            let tdAction = `<td class="no-print"><button class="danger" onclick="deleteStudentRecord('${rec.id}')">X</button></td>`;
             
             tr.innerHTML = tdName + tdClass + tdHouse + tdParams + tdTotal + tdAction;
             tbody.appendChild(tr);
@@ -524,7 +551,7 @@
         saveData();
     }
 
-    function deleteRecord(id) {
+    function deleteStudentRecord(id) {
         if(!confirm("Remove this student?")) return;
         const comp = appData.competitions.find(c => c.id === activeCompId);
         comp.records = comp.records.filter(r => r.id !== id);
