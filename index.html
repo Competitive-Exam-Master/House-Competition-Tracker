@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Competition Tracker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --border: #e5e7eb;
+            --text: #1f2937;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 { margin-top: 0; display: inline-block; }
+        .card {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 12px;
+            position: relative;
+        }
+        label {
+            display: flex;
+            align-items: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            gap: 5px;
+        }
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        /* Help Icons */
+        .help-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .help-btn:hover { background: #2563eb; }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background: #1d4ed8; }
+        button.danger { background: #ef4444; }
+        button.danger:hover { background: #b91c1c; }
+        button.secondary { background: #10b981; }
+        button.secondary:hover { background: #059669; }
+        
+        /* Excel-like Grid */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0;
+            text-align: left;
+        }
+        th {
+            background: #f8fafc;
+            padding: 8px;
+            font-size: 0.875rem;
+            position: relative;
+        }
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { background: #e2e8f0; }
+        .sort-icon { font-size: 0.7rem; margin-left: 4px; }
+        
+        td input, td select {
+            width: 100%;
+            height: 100%;
+            border: none;
+            padding: 8px;
+            background: transparent;
+            border-radius: 0;
+            box-sizing: border-box;
+        }
+        td input:focus, td select:focus {
+            outline: 2px solid var(--primary);
+            background: #fff;
+        }
+        .total-cell, .rank-cell {
+            padding: 8px;
+            font-weight: bold;
+            background: #f8fafc;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 10px 15px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .flex { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;}
+        .flex > div { flex: 1; min-width: 200px; }
+
+        /* Print Styles */
+        .print-only { display: none; }
+        
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: none; padding: 0; margin: 0; }
+            #results { display: block; }
+            .print-only { display: block; }
+            
+            /* Beautiful Print Header */
+            #print-header {
+                position: relative;
+                text-align: center;
+                margin-bottom: 25px;
+                padding-bottom: 15px;
+                border-bottom: 3px double #000;
+            }
+            #print-school {
+                font-size: 26pt;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin: 0 0 10px 0;
+                color: #2563eb !important; /* School name colored blue */
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+            #print-comp {
+                font-size: 16pt;
+                margin: 0;
+                color: #333;
+                font-weight: bold;
+            }
+
+            td input { border: none !important; outline: none !important; appearance: none; padding: 4px;}
+            th, td { padding: 6px 8px; font-size: 12pt; border: 1px solid #000; }
+            th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rank-cell { font-size: 14pt; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>🏆 House Competition Tracker</h2>
+    </div>
+    
+    <div class="tabs no-print">
+        <div class="tab active" onclick="switchTab('settings')">1. Setup</div>
+        <div class="tab" onclick="switchTab('competition')">2. Competitions</div>
+        <div class="tab" onclick="switchTab('entry')">3. Data Entry</div>
+        <div class="tab" onclick="switchTab('results')">4. Results</div>
+    </div>
+
+    <div id="settings" class="tab-content active card no-print">
+        <h3>Global Settings</h3>
+        <div class="form-group">
+            <label>School Name <div class="help-btn" onclick="showHelp('School Name', 'Enter your school\'s full name. This will appear prominently at the top of your printed results.\n\nExample: Delhi Public School, New Delhi')">i</div></label>
+            <input type="text" id="school-name-input" placeholder="e.g. Springfield High School" onchange="saveSettings()">
+        </div>
+        <div class="form-group">
+            <label>Houses <div class="help-btn" onclick="showHelp('Houses', 'List the competing houses separated by commas.\n\nExample: Red House, Blue House, Green House, Yellow House')">i</div></label>
+            <input type="text" id="houses-input" placeholder="e.g. Red, Blue, Green, Yellow" onchange="saveSettings()">
+        </div>
+        <div class="form-group">
+            <label>Classes <div class="help-btn" onclick="showHelp('Classes', 'List the participating classes separated by commas.\n\nExample: 9A, 9B, 10A, 10B')">i</div></label>
+            <input type="text" id="classes-input" placeholder="e.g. 9A, 9B, 10A, 10B" onchange="saveSettings()">
+        </div>
+    </div>
+
+    <div id="competition" class="tab-content card no-print">
+        <h3>Create New Competition</h3>
+        <div class="flex">
+            <div class="form-group">
+                <label>Competition Name <div class="help-btn" onclick="showHelp('Competition Name', 'The specific name of the event.\n\nExample: Annual English Debate')">i</div></label>
+                <input type="text" id="comp-name" placeholder="e.g. English Speech">
+            </div>
+            <div class="form-group">
+                <label>Date <div class="help-btn" onclick="showHelp('Date', 'The date the competition takes place. This is printed on the header of the result sheet.')">i</div></label>
+                <input type="date" id="comp-date">
+            </div>
+            <div class="form-group" style="flex: 2;">
+                <label>Scoring Parameters <div class="help-btn" onclick="showHelp('Parameters', 'The categories you will grade the students on. Separate them with commas.\n\nExample: Content, Fluency, Body Language, Time Management')">i</div></label>
+                <input type="text" id="comp-params" placeholder="e.g. Content, Fluency, Confidence">
+            </div>
+        </div>
+        <button onclick="createCompetition()" style="margin-top: 10px;">Create Competition</button>
+        
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border);">
+        <label>Existing Competitions <div class="help-btn" onclick="showHelp('Existing Competitions', 'Select a previously created competition to load it into the Data Entry and Results tabs.')">i</div></label>
+        <select id="comp-selector" onchange="loadActiveCompetition()"></select>
+    </div>
+
+    <div id="entry" class="tab-content card no-print">
+        <h3 id="active-comp-title">No Competition Selected</h3>
+        <div class="table-responsive">
+            <table id="entry-table" style="display: none;">
+                <thead>
+                    <tr id="entry-header">
+                        </tr>
+                </thead>
+                <tbody id="entry-body">
+                    </tbody>
+            </table>
+        </div>
+        <br>
+        <div style="display: flex; gap: 10px; align-items: center;" id="add-student-btn-container">
+            <button onclick="addStudentRow()" style="display: none;" id="btn-add-student">+ Add Student Row</button>
+            <div class="help-btn" style="display: none;" id="help-add-student" onclick="showHelp('Data Entry Grid', 'Click + Add Student to add a row.\n\nType the student\'s details and scores. The total calculates automatically. Data saves instantly as you type!')">i</div>
+        </div>
+    </div>
+
+    <div id="results" class="tab-content card">
+        
+        <div id="print-header" class="print-only">
+            <h1 id="print-school"></h1>
+            <h2 id="print-comp"></h2>
+        </div>
+
+        <div class="flex no-print" style="margin-bottom: 15px;">
+            <div class="form-group">
+                <label>Filter by Class <div class="help-btn" onclick="showHelp('Class Filter', 'View results for a specific class. The Position/Rank will automatically recalculate to show who came 1st, 2nd, etc., WITHIN this specific class.')">i</div></label>
+                <select id="filter-class" onchange="renderResults()">
+                    <option value="All">All Classes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Filter by House <div class="help-btn" onclick="showHelp('House Filter', 'View results for a specific house. The Position/Rank will automatically recalculate to show who came 1st, 2nd, etc., WITHIN this specific house.')">i</div></label>
+                <select id="filter-house" onchange="renderResults()">
+                    <option value="All">All Houses</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="secondary" onclick="preparePrint()">🖨️ Print Results</button>
+                    <div class="help-btn" onclick="showHelp('Print', 'Generates a clean, printer-friendly page. It will include your beautiful school heading, the date, and the filtered data table exactly as shown below.')">i</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="no-print" style="display: flex; align-items: center; gap: 10px;">
+            <h3 id="result-title" style="display:none; margin: 0;">Results</h3>
+            <div class="help-btn" id="help-sort" style="display:none;" onclick="showHelp('Sorting', 'Click on any column header (like Name, Class, or Total) to sort the table ascending or descending.\n\nNote: The Position is always locked to their score, no matter how you sort the list!')">i</div>
+        </div>
+        
+        <div class="table-responsive" style="margin-top: 10px;">
+            <table id="results-table" style="display:none;">
+                <thead>
+                    <tr id="results-header">
+                        </tr>
+                </thead>
+                <tbody id="results-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Helper for Alerts ---
+    function showHelp(title, message) {
+        alert("ℹ️ " + title.toUpperCase() + "\n\n" + message);
+    }
+
+    // --- State Management ---
+    let appData = {
+        schoolName: "",
+        houses: [],
+        classes: [],
+        competitions: [] // { id, name, date, params: [], records: [] }
+    };
+    let activeCompId = null;
+    
+    // Sort state for results
+    let sortCol = 'calculatedRank';
+    let sortDesc = false; // Ranks are 1, 2, 3 (Ascending means top score first)
+
+    // --- Initialization ---
+    function init() {
+        const savedData = localStorage.getItem('houseCompData');
+        if (savedData) {
+            // Merge saved data with default structure to prevent missing key errors on old data
+            const parsed = JSON.parse(savedData);
+            appData = { ...appData, ...parsed };
+            
+            document.getElementById('school-name-input').value = appData.schoolName || '';
+            document.getElementById('houses-input').value = appData.houses.join(', ');
+            document.getElementById('classes-input').value = appData.classes.join(', ');
+        }
+        updateCompSelector();
+        updateFilters();
+    }
+
+    function saveData() {
+        localStorage.setItem('houseCompData', JSON.stringify(appData));
+    }
+
+    // --- Tabs ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        
+        if(tabId === 'entry') loadActiveCompetition();
+        if(tabId === 'results') {
+            updateFilters();
+            // Default sort by Rank ascending when entering results tab
+            sortCol = 'calculatedRank'; 
+            sortDesc = false;
+            renderResults();
+        }
+    }
+
+    // --- Settings ---
+    function saveSettings() {
+        appData.schoolName = document.getElementById('school-name-input').value.trim();
+        const h = document.getElementById('houses-input').value;
+        const c = document.getElementById('classes-input').value;
+        appData.houses = h.split(',').map(s => s.trim()).filter(s => s);
+        appData.classes = c.split(',').map(s => s.trim()).filter(s => s);
+        saveData();
+        updateFilters();
+        if(activeCompId) loadActiveCompetition(); 
+    }
+
+    // --- Competitions ---
+    function createCompetition() {
+        const name = document.getElementById('comp-name').value.trim();
+        const compDate = document.getElementById('comp-date').value;
+        const paramsRaw = document.getElementById('comp-params').value;
+        const params = paramsRaw.split(',').map(s => s.trim()).filter(s => s);
+        
+        if (!name || params.length === 0) {
+            alert("Please provide a name and at least one scoring parameter.");
+            return;
+        }
+
+        const newComp = {
+            id: Date.now().toString(),
+            name: name,
+            date: compDate,
+            params: params,
+            records: []
+        };
+        
+        appData.competitions.push(newComp);
+        saveData();
+        
+        document.getElementById('comp-name').value = '';
+        document.getElementById('comp-date').value = '';
+        document.getElementById('comp-params').value = '';
+        updateCompSelector();
+        
+        document.getElementById('comp-selector').value = newComp.id;
+        loadActiveCompetition();
+        
+        // Auto jump to entry tab
+        document.querySelectorAll('.tab')[2].click(); 
+    }
+
+    function updateCompSelector() {
+        const sel = document.getElementById('comp-selector');
+        sel.innerHTML = '<option value="">-- Select a Competition --</option>';
+        appData.competitions.forEach(c => {
+            sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+    }
+
+    // --- Data Entry Grid ---
+    function loadActiveCompetition() {
+        const sel = document.getElementById('comp-selector');
+        activeCompId = sel.value;
+        
+        const table = document.getElementById('entry-table');
+        const btnAdd = document.getElementById('btn-add-student');
+        const helpAdd = document.getElementById('help-add-student');
+
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        if (!comp) {
+            document.getElementById('active-comp-title').innerText = "No Competition Selected";
+            table.style.display = 'none';
+            btnAdd.style.display = 'none';
+            helpAdd.style.display = 'none';
+            return;
+        }
+        
+        table.style.display = 'table';
+        btnAdd.style.display = 'inline-block';
+        helpAdd.style.display = 'inline-flex';
+        
+        let dateStr = comp.date ? ` (${new Date(comp.date).toLocaleDateString()})` : '';
+        document.getElementById('active-comp-title').innerText = comp.name + dateStr;
+        
+        // Build Header
+        let ths = `<th>Student Name</th><th>Class</th><th>House</th>`;
+        comp.params.forEach(p => ths += `<th>${p}</th>`);
+        ths += `<th>Total</th><th class="no-print">Action</th>`;
+        document.getElementById('entry-header').innerHTML = ths;
+        
+        renderGridBody(comp);
+    }
+
+    function renderGridBody(comp) {
+        const tbody = document.getElementById('entry-body');
+        tbody.innerHTML = '';
+        
+        comp.records.forEach((rec, index) => {
+            let tr = document.createElement('tr');
+            
+            let tdName = `<td><input type="text" value="${rec.name || ''}" onchange="updateRecord('${rec.id}', 'name', this.value)"></td>`;
+            
+            let classOpts = `<option value="">Select</option>` + appData.classes.map(c => `<option value="${c}" ${rec.class===c?'selected':''}>${c}</option>`).join('');
+            let tdClass = `<td><select onchange="updateRecord('${rec.id}', 'class', this.value)">${classOpts}</select></td>`;
+            
+            let houseOpts = `<option value="">Select</option>` + appData.houses.map(h => `<option value="${h}" ${rec.house===h?'selected':''}>${h}</option>`).join('');
+            let tdHouse = `<td><select onchange="updateRecord('${rec.id}', 'house', this.value)">${houseOpts}</select></td>`;
+            
+            let tdParams = '';
+            comp.params.forEach(p => {
+                let val = rec.scores[p] !== undefined ? rec.scores[p] : '';
+                tdParams += `<td><input type="number" step="0.5" value="${val}" oninput="updateScore('${rec.id}', '${p}', this.value)"></td>`;
+            });
+            
+            let tdTotal = `<td class="total-cell" id="total-${rec.id}">${rec.total || 0}</td>`;
+            let tdAction = `<td class="no-print"><button class="danger" onclick="deleteRecord('${rec.id}')">X</button></td>`;
+            
+            tr.innerHTML = tdName + tdClass + tdHouse + tdParams + tdTotal + tdAction;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function addStudentRow() {
+        if (!activeCompId) return;
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        comp.records.push({
+            id: Date.now().toString() + Math.floor(Math.random()*100),
+            name: '',
+            class: '',
+            house: '',
+            scores: {},
+            total: 0
+        });
+        saveData();
+        renderGridBody(comp);
+    }
+
+    function updateRecord(id, field, value) {
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        const rec = comp.records.find(r => r.id === id);
+        if(rec) {
+            rec[field] = value;
+            saveData();
+        }
+    }
+
+    function updateScore(id, param, value) {
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        const rec = comp.records.find(r => r.id === id);
+        if(!rec) return;
+
+        // If empty string, treat as 0 for calculation but allow empty state
+        rec.scores[param] = value === '' ? 0 : (parseFloat(value) || 0);
+        
+        let total = 0;
+        for (let p in rec.scores) { total += rec.scores[p]; }
+        rec.total = total;
+        
+        document.getElementById(`total-${id}`).innerText = total;
+        saveData();
+    }
+
+    function deleteRecord(id) {
+        if(!confirm("Remove this student?")) return;
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        comp.records = comp.records.filter(r => r.id !== id);
+        saveData();
+        renderGridBody(comp);
+    }
+
+    // --- Results & Reports ---
+    function updateFilters() {
+        const cFilter = document.getElementById('filter-class');
+        const hFilter = document.getElementById('filter-house');
+        
+        cFilter.innerHTML = '<option value="All">All Classes</option>' + appData.classes.map(c => `<option value="${c}">${c}</option>`).join('');
+        hFilter.innerHTML = '<option value="All">All Houses</option>' + appData.houses.map(h => `<option value="${h}">${h}</option>`).join('');
+    }
+
+    function handleSort(col) {
+        if (sortCol === col) {
+            sortDesc = !sortDesc;
+        } else {
+            sortCol = col;
+            sortDesc = true; 
+            if(['name', 'class', 'house', 'calculatedRank'].includes(col)) sortDesc = false; // Ascending default for text and ranks
+        }
+        renderResults();
+    }
+
+    function getSortIndicator(col) {
+        if (sortCol !== col) return '';
+        return sortDesc ? '<span class="sort-icon">▼</span>' : '<span class="sort-icon">▲</span>';
+    }
+
+    // Ordinal formatting with Emojis
+    function formatRank(rank) {
+        if (!rank) return "-";
+        let s = ["th", "st", "nd", "rd"], v = rank % 100;
+        let ord = rank + (s[(v - 20) % 10] || s[v] || s[0]);
+        
+        if (rank === 1) return "🥇 " + ord;
+        if (rank === 2) return "🥈 " + ord;
+        if (rank === 3) return "🥉 " + ord;
+        return ord;
+    }
+
+    function renderResults() {
+        const table = document.getElementById('results-table');
+        const title = document.getElementById('result-title');
+        const helpSort = document.getElementById('help-sort');
+        
+        if (!activeCompId) {
+            table.style.display = 'none';
+            title.style.display = 'none';
+            helpSort.style.display = 'none';
+            return;
+        }
+        
+        table.style.display = 'table';
+        title.style.display = 'block';
+        helpSort.style.display = 'inline-flex';
+        
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        title.innerText = `Results: ${comp.name}`;
+
+        // 1. Build Header with Sort
+        let ths = `<th class="sortable" onclick="handleSort('calculatedRank')">Position ${getSortIndicator('calculatedRank')}</th>
+                   <th class="sortable" onclick="handleSort('name')">Name ${getSortIndicator('name')}</th>
+                   <th class="sortable" onclick="handleSort('class')">Class ${getSortIndicator('class')}</th>
+                   <th class="sortable" onclick="handleSort('house')">House ${getSortIndicator('house')}</th>`;
+        
+        comp.params.forEach(p => {
+            ths += `<th class="sortable" onclick="handleSort('${p}')">${p} ${getSortIndicator(p)}</th>`;
+        });
+        
+        ths += `<th class="sortable" onclick="handleSort('total')">Total ${getSortIndicator('total')}</th>`;
+        
+        document.getElementById('results-header').innerHTML = ths;
+
+        // 2. Filter Records
+        let filteredRecords = [...comp.records].filter(r => r.name.trim() !== ''); // Ignore empty names
+        const fClass = document.getElementById('filter-class').value;
+        const fHouse = document.getElementById('filter-house').value;
+        
+        if (fClass !== 'All') filteredRecords = filteredRecords.filter(r => r.class === fClass);
+        if (fHouse !== 'All') filteredRecords = filteredRecords.filter(r => r.house === fHouse);
+
+        // 3. Calculate True Ranks Based on the Filtered View
+        filteredRecords.sort((a, b) => (b.total || 0) - (a.total || 0));
+        
+        let currentRank = 1;
+        let prevTotal = null;
+
+        filteredRecords.forEach((r, index) => {
+            if (prevTotal !== null && (r.total || 0) < prevTotal) {
+                currentRank = index + 1; 
+            }
+            r.calculatedRank = currentRank;
+            prevTotal = r.total || 0;
+        });
+
+        // 4. Sort For Display
+        filteredRecords.sort((a, b) => {
+            let valA, valB;
+            
+            if (['name', 'class', 'house', 'total', 'calculatedRank'].includes(sortCol)) {
+                valA = a[sortCol];
+                valB = b[sortCol];
+            } else {
+                valA = a.scores[sortCol] || 0;
+                valB = b.scores[sortCol] || 0;
+            }
+
+            if (valA === undefined || valA === null) valA = '';
+            if (valB === undefined || valB === null) valB = '';
+            
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+
+            if (valA < valB) return sortDesc ? 1 : -1;
+            if (valA > valB) return sortDesc ? -1 : 1;
+            return 0;
+        });
+
+        // 5. Render Body
+        const tbody = document.getElementById('results-body');
+        tbody.innerHTML = '';
+        
+        filteredRecords.forEach((r) => {
+            let tr = document.createElement('tr');
+            let displayRank = formatRank(r.calculatedRank);
+
+            let html = `<td class="rank-cell">${displayRank}</td>
+                        <td>${r.name}</td>
+                        <td>${r.class}</td>
+                        <td>${r.house}</td>`;
+            
+            comp.params.forEach(p => {
+                html += `<td>${r.scores[p] !== undefined ? r.scores[p] : 0}</td>`;
+            });
+            
+            html += `<td class="total-cell">${r.total}</td>`;
+            
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- Print Preparation ---
+    function preparePrint() {
+        if (!activeCompId) return alert("Select a competition first.");
+        
+        const comp = appData.competitions.find(c => c.id === activeCompId);
+        
+        // Populate Print Header
+        document.getElementById('print-school').innerText = appData.schoolName || 'School Name Not Set';
+        
+        if (comp.date) {
+            const dateObj = new Date(comp.date);
+            const formattedDate = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('print-comp').innerText = "Competition: " + comp.name + " | Date: " + formattedDate;
+        } else {
+            document.getElementById('print-comp').innerText = "Competition: " + comp.name;
+        }
+
+        window.print();
+    }
+
+    // Run on load
+    window.onload = init;
+</script>
+</body>
+</html>
