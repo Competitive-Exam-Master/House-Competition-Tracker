@@ -54,6 +54,117 @@
             box-sizing: border-box;
         }
         
+        /* Dynamic List/Tags Styles */
+        .input-with-btn {
+            display: flex;
+            gap: 5px;
+        }
+        .input-with-btn input {
+            flex: 1;
+        }
+        .input-with-btn button {
+            padding: 8px 12px;
+            font-size: 1.2rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .tag {
+            background: #e2e8f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #cbd5e1;
+        }
+        .tag-remove {
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 0.8;
+            margin-left: 4px;
+        }
+        .tag-remove:hover {
+            color: #b91c1c;
+        }
+
+        /* Checkbox Dropdown Styles */
+        .checkbox-dropdown {
+            position: relative;
+            width: 100%;
+            user-select: none;
+        }
+        .dropdown-button {
+            border: 1px solid var(--border);
+            padding: 8px;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            top: 100%;
+            left: 0;
+            margin-top: 2px;
+        }
+        .dropdown-menu.show {
+            display: block;
+        }
+        .dropdown-item {
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .dropdown-item:hover {
+            background: #f3f4f6;
+        }
+        .dropdown-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* House Ranking Panel */
+        .house-ranking-card {
+            background: #fefce8;
+            border: 2px solid #fde047;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(253, 224, 71, 0.2);
+        }
+        .house-ranking-card table th {
+            background: #fef08a;
+        }
+        
         /* Help Icons */
         .help-btn {
             background: #3b82f6;
@@ -90,6 +201,8 @@
         button.success:hover { background: #059669; }
         button.dark { background: #4b5563; }
         button.dark:hover { background: #374151; }
+        button.warning { background: #eab308; color: #fff;}
+        button.warning:hover { background: #ca8a04; }
         
         /* Excel-like Grid */
         .table-responsive {
@@ -165,6 +278,8 @@
             .card { box-shadow: none; border: none; padding: 0; margin: 0; }
             #results { display: block; }
             .print-only { display: block; }
+            .house-ranking-card { border: 2px solid #000; box-shadow: none; background: #fff;}
+            .house-ranking-card table th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             
             /* Beautiful Print Header */
             #print-header {
@@ -218,13 +333,24 @@
             <label>School Name <div class="help-btn" onclick="showHelp('School Name', 'Enter your school\'s full name. This will appear prominently at the top of your printed results.\n\nExample: Delhi Public School, New Delhi')">i</div></label>
             <input type="text" id="school-name-input" placeholder="e.g. Springfield High School" onchange="saveSettings()">
         </div>
-        <div class="form-group">
-            <label>Houses <div class="help-btn" onclick="showHelp('Houses', 'List the competing houses separated by commas.\n\nExample: Red House, Blue House, Green House, Yellow House')">i</div></label>
-            <input type="text" id="houses-input" placeholder="e.g. Red, Blue, Green, Yellow" onchange="saveSettings()">
-        </div>
-        <div class="form-group">
-            <label>Classes <div class="help-btn" onclick="showHelp('Classes', 'List the participating classes separated by commas.\n\nExample: 9A, 9B, 10A, 10B')">i</div></label>
-            <input type="text" id="classes-input" placeholder="e.g. 9A, 9B, 10A, 10B" onchange="saveSettings()">
+        
+        <div class="flex">
+            <div class="form-group">
+                <label>Houses <div class="help-btn" onclick="showHelp('Houses', 'Type a house name and click + to add it to your school.')">i</div></label>
+                <div class="input-with-btn">
+                    <input type="text" id="new-house" placeholder="e.g. Red House" onkeypress="if(event.key === 'Enter') addHouse()">
+                    <button type="button" class="dark" onclick="addHouse()">+</button>
+                </div>
+                <div id="houses-list" class="tag-list"></div>
+            </div>
+            <div class="form-group">
+                <label>Classes <div class="help-btn" onclick="showHelp('Classes', 'Type a class name and click + to add it to your school.')">i</div></label>
+                <div class="input-with-btn">
+                    <input type="text" id="new-class" placeholder="e.g. 9A" onkeypress="if(event.key === 'Enter') addClass()">
+                    <button type="button" class="dark" onclick="addClass()">+</button>
+                </div>
+                <div id="classes-list" class="tag-list"></div>
+            </div>
         </div>
     </div>
 
@@ -240,8 +366,12 @@
                 <input type="date" id="comp-date">
             </div>
             <div class="form-group" style="flex: 2;">
-                <label>Scoring Parameters <div class="help-btn" onclick="showHelp('Parameters', 'The categories you will grade the students on. Separate them with commas.\n\nExample: Content, Fluency, Body Language, Time Management')">i</div></label>
-                <input type="text" id="comp-params" placeholder="e.g. Content, Fluency, Confidence">
+                <label>Scoring Parameters <div class="help-btn" onclick="showHelp('Parameters', 'Type a grading category and click + to add it.\n\nExample: Content, Fluency, Body Language')">i</div></label>
+                <div class="input-with-btn">
+                    <input type="text" id="new-param" placeholder="e.g. Content" onkeypress="if(event.key === 'Enter') addParam()">
+                    <button type="button" class="dark" onclick="addParam()">+</button>
+                </div>
+                <div id="params-list" class="tag-list"></div>
             </div>
         </div>
         <button onclick="createCompetition()" style="margin-top: 10px;">Create Competition</button>
@@ -282,29 +412,48 @@
 
         <div class="flex no-print" style="margin-bottom: 15px;">
             <div class="form-group">
-                <label>Filter by Class <div class="help-btn" onclick="showHelp('Class Filter', 'View results for a specific class. The Position/Rank will automatically recalculate to show who came 1st, 2nd, etc., WITHIN this specific class.')">i</div></label>
-                <select id="filter-class" onchange="renderResults()">
-                    <option value="All">All Classes</option>
-                </select>
+                <label>Filter by Class <div class="help-btn" onclick="showHelp('Class Filter', 'Tick multiple classes to combine them. Leave all unticked to show everyone. The standings will automatically update.')">i</div></label>
+                <div class="checkbox-dropdown" id="class-dropdown-container">
+                    </div>
             </div>
             <div class="form-group">
-                <label>Filter by House <div class="help-btn" onclick="showHelp('House Filter', 'View results for a specific house. The Position/Rank will automatically recalculate to show who came 1st, 2nd, etc., WITHIN this specific house.')">i</div></label>
-                <select id="filter-house" onchange="renderResults()">
-                    <option value="All">All Houses</option>
-                </select>
+                <label>Filter by House <div class="help-btn" onclick="showHelp('House Filter', 'Tick multiple houses to combine them. Leave all unticked to show everyone. The standings will automatically update.')">i</div></label>
+                <div class="checkbox-dropdown" id="house-dropdown-container">
+                    </div>
             </div>
             <div class="form-group" style="flex: 2;">
                 <label>&nbsp;</label>
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button class="warning" onclick="toggleHouseRanking()">🏆 Standings</button>
                     <button class="dark" onclick="preparePrint()">🖨️ Print</button>
-                    <button class="success" id="share-pdf-btn" onclick="shareAsPDF()">📤 Share PDF</button>
-                    <div class="help-btn" onclick="showHelp('Output Options', 'PRINT: Generates a clean page for your physical printer.\n\nSHARE PDF: Converts the result table to a PDF file. On mobile, this will open WhatsApp/Email to send directly. On PC, it will download the file.')">i</div>
+                    <button class="success" id="share-pdf-btn" onclick="shareAsPDF()">📤 PDF</button>
+                    <div class="help-btn" onclick="showHelp('Output Options', 'STANDINGS: Calculates the total combined points for each House based on your selected filters.\n\nPRINT: Generates a clean page.\n\nPDF: Converts the result table to a PDF file.')">i</div>
                 </div>
+            </div>
+        </div>
+
+        <div id="house-standings-panel" class="house-ranking-card" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0;">🏆 House Standings</h3>
+                <span style="font-size: 0.875rem; color: #854d0e; font-weight: bold;" id="standings-context">Based on current filters</span>
+            </div>
+            <div class="table-responsive">
+                <table style="width: 100%; max-width: 600px; background: white;">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>House Name</th>
+                            <th>Total Accumulated Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="house-standings-body">
+                    </tbody>
+                </table>
             </div>
         </div>
         
         <div class="no-print" style="display: flex; align-items: center; gap: 10px;">
-            <h3 id="result-title" style="display:none; margin: 0;">Results</h3>
+            <h3 id="result-title" style="display:none; margin: 0;">Individual Results</h3>
             <div class="help-btn" id="help-sort" style="display:none;" onclick="showHelp('Sorting', 'Click on any column header (like Name, Class, or Total) to sort the table ascending or descending.\n\nNote: The Position is always locked to their score, no matter how you sort the list!')">i</div>
         </div>
         
@@ -327,6 +476,15 @@
         alert("ℹ️ " + title.toUpperCase() + "\n\n" + message);
     }
 
+    // Close custom dropdowns when clicking outside
+    window.onclick = function(event) {
+        if (!event.target.closest('.checkbox-dropdown')) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    }
+
     // --- State Management ---
     let appData = {
         schoolName: "",
@@ -337,6 +495,7 @@
     let activeCompId = null;
     let sortCol = 'calculatedRank';
     let sortDesc = false;
+    let tempParams = [];
 
     // --- Initialization ---
     function init() {
@@ -345,9 +504,9 @@
             const parsed = JSON.parse(savedData);
             appData = { ...appData, ...parsed };
             document.getElementById('school-name-input').value = appData.schoolName || '';
-            document.getElementById('houses-input').value = appData.houses.join(', ');
-            document.getElementById('classes-input').value = appData.classes.join(', ');
         }
+        renderHouses();
+        renderClasses();
         updateCompSelector();
         updateFilters();
     }
@@ -355,6 +514,86 @@
     function saveData() {
         localStorage.setItem('houseCompData', JSON.stringify(appData));
     }
+
+    // --- Dynamic Lists (Settings & Params) ---
+    
+    // Houses
+    function renderHouses() {
+        const list = document.getElementById('houses-list');
+        list.innerHTML = appData.houses.map((h, i) => 
+            `<div class="tag">${h} <span class="tag-remove" onclick="removeHouse(${i})" title="Remove">×</span></div>`
+        ).join('');
+        saveData();
+        updateFilters();
+    }
+    
+    function addHouse() {
+        const input = document.getElementById('new-house');
+        const val = input.value.trim();
+        if(val && !appData.houses.includes(val)) {
+            appData.houses.push(val);
+            input.value = '';
+            renderHouses();
+            if(activeCompId) loadActiveCompetition(); 
+        }
+    }
+    
+    function removeHouse(index) {
+        appData.houses.splice(index, 1);
+        renderHouses();
+        if(activeCompId) loadActiveCompetition();
+    }
+
+    // Classes
+    function renderClasses() {
+        const list = document.getElementById('classes-list');
+        list.innerHTML = appData.classes.map((c, i) => 
+            `<div class="tag">${c} <span class="tag-remove" onclick="removeClass(${i})" title="Remove">×</span></div>`
+        ).join('');
+        saveData();
+        updateFilters();
+    }
+    
+    function addClass() {
+        const input = document.getElementById('new-class');
+        const val = input.value.trim();
+        if(val && !appData.classes.includes(val)) {
+            appData.classes.push(val);
+            input.value = '';
+            renderClasses();
+            if(activeCompId) loadActiveCompetition(); 
+        }
+    }
+    
+    function removeClass(index) {
+        appData.classes.splice(index, 1);
+        renderClasses();
+        if(activeCompId) loadActiveCompetition();
+    }
+
+    // Competition Parameters (Temporary before creation)
+    function renderParams() {
+        const list = document.getElementById('params-list');
+        list.innerHTML = tempParams.map((p, i) => 
+            `<div class="tag">${p} <span class="tag-remove" onclick="removeParam(${i})" title="Remove">×</span></div>`
+        ).join('');
+    }
+
+    function addParam() {
+        const input = document.getElementById('new-param');
+        const val = input.value.trim();
+        if(val && !tempParams.includes(val)) {
+            tempParams.push(val);
+            input.value = '';
+            renderParams();
+        }
+    }
+
+    function removeParam(index) {
+        tempParams.splice(index, 1);
+        renderParams();
+    }
+
 
     // --- Tabs ---
     function switchTab(tabId) {
@@ -375,21 +614,14 @@
     // --- Settings ---
     function saveSettings() {
         appData.schoolName = document.getElementById('school-name-input').value.trim();
-        const h = document.getElementById('houses-input').value;
-        const c = document.getElementById('classes-input').value;
-        appData.houses = h.split(',').map(s => s.trim()).filter(s => s);
-        appData.classes = c.split(',').map(s => s.trim()).filter(s => s);
         saveData();
-        updateFilters();
-        if(activeCompId) loadActiveCompetition(); 
     }
 
     // --- Competitions ---
     function createCompetition() {
         const name = document.getElementById('comp-name').value.trim();
         const compDate = document.getElementById('comp-date').value;
-        const paramsRaw = document.getElementById('comp-params').value;
-        const params = paramsRaw.split(',').map(s => s.trim()).filter(s => s);
+        const params = [...tempParams];
         
         if (!name || params.length === 0) {
             alert("Please provide a name and at least one scoring parameter.");
@@ -407,11 +639,13 @@
         appData.competitions.push(newComp);
         saveData();
         
+        // Reset form
         document.getElementById('comp-name').value = '';
         document.getElementById('comp-date').value = '';
-        document.getElementById('comp-params').value = '';
-        updateCompSelector();
+        tempParams = [];
+        renderParams();
         
+        updateCompSelector();
         document.getElementById('comp-selector').value = newComp.id;
         loadActiveCompetition();
         document.querySelectorAll('.tab')[2].click(); 
@@ -460,6 +694,7 @@
             btnAdd.style.display = 'none';
             helpAdd.style.display = 'none';
             deleteCompBtn.style.display = 'none';
+            document.getElementById('house-standings-panel').style.display = 'none';
             return;
         }
         
@@ -549,12 +784,62 @@
         renderGridBody(comp);
     }
 
-    // --- Results & Reports ---
+    // --- Results, Checkbox Filters & Reports ---
+    function toggleDropdown(menuId) {
+        const menu = document.getElementById(menuId);
+        const isShowing = menu.classList.contains('show');
+        
+        // Hide all menus first
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+        
+        // Show the clicked one if it wasn't showing
+        if (!isShowing) {
+            menu.classList.add('show');
+        }
+    }
+
+    function updateDropdownText(type) {
+        const menu = document.getElementById(`${type}-menu`);
+        const btnText = document.getElementById(`${type}-btn-text`);
+        const checked = menu.querySelectorAll('input:checked');
+        
+        if (checked.length === 0) {
+            btnText.innerText = `All ${type === 'class' ? 'Classes' : 'Houses'}`;
+        } else if (checked.length === 1) {
+            btnText.innerText = checked[0].value;
+        } else {
+            btnText.innerText = `${checked.length} Selected`;
+        }
+        renderResults(); // Trigger re-render whenever checkboxes change
+    }
+
     function updateFilters() {
-        const cFilter = document.getElementById('filter-class');
-        const hFilter = document.getElementById('filter-house');
-        cFilter.innerHTML = '<option value="All">All Classes</option>' + appData.classes.map(c => `<option value="${c}">${c}</option>`).join('');
-        hFilter.innerHTML = '<option value="All">All Houses</option>' + appData.houses.map(h => `<option value="${h}">${h}</option>`).join('');
+        const cContainer = document.getElementById('class-dropdown-container');
+        const hContainer = document.getElementById('house-dropdown-container');
+        
+        // Build Class Dropdown
+        let cHTML = `
+            <div class="dropdown-button" onclick="toggleDropdown('class-menu')">
+                <span id="class-btn-text">All Classes</span> <span>▼</span>
+            </div>
+            <div class="dropdown-menu" id="class-menu">`;
+        appData.classes.forEach(c => {
+            cHTML += `<label class="dropdown-item"><input type="checkbox" value="${c}" onchange="updateDropdownText('class')"> ${c}</label>`;
+        });
+        cHTML += `</div>`;
+        cContainer.innerHTML = cHTML;
+
+        // Build House Dropdown
+        let hHTML = `
+            <div class="dropdown-button" onclick="toggleDropdown('house-menu')">
+                <span id="house-btn-text">All Houses</span> <span>▼</span>
+            </div>
+            <div class="dropdown-menu" id="house-menu">`;
+        appData.houses.forEach(h => {
+            hHTML += `<label class="dropdown-item"><input type="checkbox" value="${h}" onchange="updateDropdownText('house')"> ${h}</label>`;
+        });
+        hHTML += `</div>`;
+        hContainer.innerHTML = hHTML;
     }
 
     function handleSort(col) {
@@ -583,6 +868,68 @@
         return ord;
     }
 
+    // Toggle the House Ranking panel
+    function toggleHouseRanking() {
+        if (!activeCompId) return alert("Select a competition first.");
+        const panel = document.getElementById('house-standings-panel');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            renderResults(); // Recalculate and update
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    // Render the House Rankings inside the panel
+    function updateHouseRankingsUI(filteredRecords, classesSelected, housesSelected) {
+        const panel = document.getElementById('house-standings-panel');
+        if (panel.style.display === 'none') return; // Don't do math if hidden
+
+        const contextSpan = document.getElementById('standings-context');
+        let ctxText = "All Participants";
+        if(classesSelected.length > 0 && housesSelected.length > 0) {
+            ctxText = `For Selected Classes & Houses`;
+        } else if (classesSelected.length > 0) {
+            ctxText = `For Classes: ${classesSelected.join(', ')}`;
+        } else if (housesSelected.length > 0) {
+            ctxText = `For Houses: ${housesSelected.join(', ')}`;
+        }
+        contextSpan.innerText = ctxText;
+
+        const houseScores = {};
+        
+        // Sum totals for each house based on the CURRENT filter
+        filteredRecords.forEach(r => {
+            if (!r.house) return; // Skip if student has no house assigned
+            if (!houseScores[r.house]) houseScores[r.house] = 0;
+            houseScores[r.house] += (r.total || 0);
+        });
+
+        // Convert to array and sort descending
+        const sortedHouses = Object.keys(houseScores).map(h => ({ name: h, total: houseScores[h] })).sort((a, b) => b.total - a.total);
+        
+        const tbody = document.getElementById('house-standings-body');
+        tbody.innerHTML = '';
+        
+        if(sortedHouses.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 10px;">No data available for these filters.</td></tr>`;
+            return;
+        }
+
+        let currentRank = 1, prevTotal = null;
+        sortedHouses.forEach((h, index) => {
+            if (prevTotal !== null && h.total < prevTotal) currentRank = index + 1;
+            prevTotal = h.total;
+            
+            tbody.innerHTML += `<tr>
+                <td class="rank-cell">${formatRank(currentRank)}</td>
+                <td>${h.name}</td>
+                <td class="total-cell">${h.total}</td>
+            </tr>`;
+        });
+    }
+
+
     function renderResults() {
         const table = document.getElementById('results-table');
         const title = document.getElementById('result-title');
@@ -592,6 +939,7 @@
             table.style.display = 'none';
             title.style.display = 'none';
             helpSort.style.display = 'none';
+            document.getElementById('house-standings-panel').style.display = 'none';
             return;
         }
         
@@ -600,7 +948,7 @@
         helpSort.style.display = 'inline-flex';
         
         const comp = appData.competitions.find(c => c.id === activeCompId);
-        title.innerText = `Results: ${comp.name}`;
+        title.innerText = `Individual Results: ${comp.name}`;
 
         let ths = `<th class="sortable" onclick="handleSort('calculatedRank')">Position ${getSortIndicator('calculatedRank')}</th>
                    <th class="sortable" onclick="handleSort('name')">Name ${getSortIndicator('name')}</th>
@@ -611,11 +959,22 @@
         document.getElementById('results-header').innerHTML = ths;
 
         let filteredRecords = [...comp.records].filter(r => r.name.trim() !== '');
-        const fClass = document.getElementById('filter-class').value;
-        const fHouse = document.getElementById('filter-house').value;
-        if (fClass !== 'All') filteredRecords = filteredRecords.filter(r => r.class === fClass);
-        if (fHouse !== 'All') filteredRecords = filteredRecords.filter(r => r.house === fHouse);
+        
+        // Multi-select Checkbox filter logic
+        const selectedClasses = Array.from(document.querySelectorAll('#class-menu input:checked')).map(cb => cb.value);
+        const selectedHouses = Array.from(document.querySelectorAll('#house-menu input:checked')).map(cb => cb.value);
 
+        if (selectedClasses.length > 0) {
+            filteredRecords = filteredRecords.filter(r => selectedClasses.includes(r.class));
+        }
+        if (selectedHouses.length > 0) {
+            filteredRecords = filteredRecords.filter(r => selectedHouses.includes(r.house));
+        }
+
+        // Update the House Standings panel based on these filters
+        updateHouseRankingsUI(filteredRecords, selectedClasses, selectedHouses);
+
+        // Individual Rank Recalculation (runs on the filtered subset)
         filteredRecords.sort((a, b) => (b.total || 0) - (a.total || 0));
         let currentRank = 1, prevTotal = null;
         filteredRecords.forEach((r, index) => {
@@ -624,6 +983,7 @@
             prevTotal = r.total || 0;
         });
 
+        // Final sorting for display
         filteredRecords.sort((a, b) => {
             let valA, valB;
             if (['name', 'class', 'house', 'total', 'calculatedRank'].includes(sortCol)) {
@@ -700,6 +1060,41 @@
                 </div>
             `;
 
+            // If House Panel is showing, clone it for the PDF
+            const housePanel = document.getElementById('house-standings-panel');
+            if (housePanel.style.display !== 'none') {
+                const panelClone = housePanel.cloneNode(true);
+                panelClone.style.border = '2px solid #000';
+                panelClone.style.background = '#fff';
+                panelClone.style.boxShadow = 'none';
+                panelClone.style.marginBottom = '30px';
+                
+                const panelTable = panelClone.querySelector('table');
+                panelTable.style.width = '100%';
+                panelTable.style.borderCollapse = 'collapse';
+                
+                const ths = panelTable.querySelectorAll('th');
+                const tds = panelTable.querySelectorAll('td');
+                [...ths, ...tds].forEach(cell => {
+                    cell.style.border = '1px solid #000';
+                    cell.style.padding = '8px';
+                    cell.style.fontSize = '12pt';
+                    cell.style.textAlign = 'left';
+                });
+                ths.forEach(th => {
+                    th.style.backgroundColor = '#f0f0f0';
+                    th.style.fontWeight = 'bold';
+                });
+
+                pdfContainer.appendChild(panelClone);
+            }
+
+            // Add Title for Individual Results
+            const tableTitle = document.createElement('h3');
+            tableTitle.innerText = "Individual Results";
+            tableTitle.style.marginBottom = "10px";
+            pdfContainer.appendChild(tableTitle);
+
             // Clone the existing results table
             const originalTable = document.getElementById('results-table');
             const tableClone = originalTable.cloneNode(true);
@@ -708,17 +1103,17 @@
             tableClone.style.borderCollapse = 'collapse';
             
             // Force strict styling on the cloned table for PDF export
-            const ths = tableClone.querySelectorAll('th');
-            const tds = tableClone.querySelectorAll('td');
+            const indThs = tableClone.querySelectorAll('th');
+            const indTds = tableClone.querySelectorAll('td');
             
-            [...ths, ...tds].forEach(cell => {
+            [...indThs, ...indTds].forEach(cell => {
                 cell.style.border = '1px solid #000';
                 cell.style.padding = '8px';
                 cell.style.fontSize = '12pt';
                 cell.style.textAlign = 'left';
             });
             
-            ths.forEach(th => {
+            indThs.forEach(th => {
                 th.style.backgroundColor = '#f0f0f0';
                 th.style.fontWeight = 'bold';
                 // Remove sort arrows from the PDF version
@@ -760,7 +1155,7 @@
             alert("Could not generate PDF. Please ensure you have internet access for the PDF tool to load.");
         } finally {
             // Restore button state
-            btn.innerText = "📤 Share PDF";
+            btn.innerText = "📤 PDF";
             btn.disabled = false;
         }
     }
